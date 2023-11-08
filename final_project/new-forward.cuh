@@ -5,6 +5,7 @@
 #include <mxnet/base.h>
 
 #define TILE_WIDTH 16
+#define BLOCK_SIZE 32
 
 namespace mxnet
 {
@@ -153,6 +154,21 @@ void forward<gpu, float>(mshadow::Tensor<gpu, 4, float> &y, const mshadow::Tenso
 
     dim3 gridDim((B + 511) / 512);
     dim3 blockDim(512);
+
+    const int TILE_WIDTH_K = TILE_WIDTH + K - 1;
+    int H_grid = ceil((float)H_out/TILE_WIDTH);
+    int W_grid = ceil((float)W_out/TILE_WIDTH);
+    int Z = H_grid * W_grid;
+
+    // ===== Optimization 1: Shared Memory Convolution==== 
+    // Set the kernel dimensions
+    dim3 gridDim(B, M, Z);
+    dim3 blockDim(TILE_WIDTH, TILE_WIDTH, 1);
+
+    // Call the kernel
+    size_t shared = sizeof(float)*(TILE_WIDTH_K*TILE_WIDTH_K+K*K);
+    forward_kernel_shared<<<gridDim, blockDim, shared, s>>>(y.dptr_,x.dptr_,w.dptr_, B,M,C,H,W,K);
+
 
     MSHADOW_CUDA_CALL(cudaDeviceSynchronize());
 
