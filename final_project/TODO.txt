@@ -1,0 +1,18 @@
+1) FIRST OPTIMIZATION 
+*Used Shared memory convolution as presented in the book 
+*TILE_WIDTH = 16
+*Both X and W is put in shared memory as in starting procedure and partial result is stored in acc.
+*Turned out decent enough to fulfill the basic criteria of <0.3sec for 2 passes 
+
+2) SECOND OPTIMIZATION
+*Used shared memory convolution but this time latency was reduced by putting W (M,C,K,K) in constant memory
+*TILE_WIDTH = 16
+*Only loading X into shared memory this time and using linearized access to get W from const cache , input only need x and y dptr.
+*Better than optimization 1 in terms of inference time.
+
+3) THIRD OPTIMIZATION (TBD)
+*Use GEMM approach as discussed in the book and try to make it better by unrolling X and W and performing a single large matrix multiplication.
+*Write unroll kernel from book and conv_fwd kernel.
+*Experiment with tiling on the same as its just matrix mulitplication again
+*Maybe have 2 diff kernels for diff kernel lengths? maybe later in the experiment side of it .
+
